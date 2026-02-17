@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label Release Manager</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #000000;
+            --tg-theme-hint-color: #999999;
+            --tg-theme-link-color: #2481cc;
+            --tg-theme-button-color: #2481cc;
+            --tg-theme-button-text-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            padding-bottom: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .nav {
+            display: flex;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow-x: auto;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: white;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .nav button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 15px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .card h3 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 0 10px;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step::before {
+            content: '';
+            display: block;
+            width: 30px;
+            height: 30px;
+            margin: 0 auto 5px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            line-height: 30px;
+            font-weight: 600;
+        }
+
+        .step.active::before {
+            background: #667eea;
+            color: white;
+            content: attr(data-step);
+        }
+
+        .step.completed::before {
+            background: #4caf50;
+            content: '✓';
+            color: white;
+        }
+
+        .step span {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .step.active span,
+        .step.completed span {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .release-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .release-item h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .release-item p {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #666;
+        }
+
+        .info-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .tool-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .tool-card:active {
+            transform: scale(0.98);
+        }
+
+        .tool-card h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .tool-card p {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .payment-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-amount {
+            font-size: 20px;
+            font-weight: 700;
+            color: #4caf50;
+        }
+
+        .file-upload {
+            border: 2px dashed #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎵 Label Manager</h1>
+        <p>Управление релизами и артистами</p>
+    </div>
+
+    <div class="nav">
+        <button class="active" onclick="showSection('releases')">📤 Релизы</button>
+        <button onclick="showSection('label')">ℹ️ О лейбле</button>
+        <button onclick="showSection('tools')">🛠 Инструменты</button>
+        <button onclick="showSection('reports')">📊 Отчеты</button>
+        <button onclick="showSection('payments')">💰 Выплаты</button>
+    </div>
+
+    <div class="content">
+        <!-- Раздел: Подача релизов -->
+        <div id="releases" class="section active">
+            <div class="card">
+                <h3>Новый релиз</h3>
+
+                <div class="step-indicator">
+                    <div class="step active" data-step="1">
+                        <span>Основное</span>
+                    </div>
+                    <div class="step" data-step="2">
+                        <span>Треки</span>
+                    </div>
+                    <div class="step" data-step="3">
+                        <span>Обложка</span>
+                    </div>
+                    <div class="step" data-step="4">
+                        <span>Проверка</span>
+                    </div>
+                </div>
+
+                <div id="step1" class="form-step">
+                    <div class="form-group">
+                        <label>Имя артиста *</label>
+                        <input type="text" id="artistName" placeholder="Введите имя артиста">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Название релиза *</label>
+                        <input type="text" id="releaseName" placeholder="Название альбома/сингла">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Тип релиза *</label>
+                        <select id="releaseType">
+                            <option value="">Выберите тип</option>
+                            <option value="single">Single</option>
+                            <option value="ep">EP</option>
+                            <option value="album">Album</option>
+                            <option value="compilation">Compilation</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Основной жанр *</label>
+                        <select id="genre">
+                            <option value="">Выберите жанр</option>
+                            <option value="witch-house">Witch House</option>
+                            <option value="darkwave">Darkwave</option>
+                            <option value="industrial">Industrial</option>
+                            <option value="boombap">Boom Bap</option>
+                            <option value="trap">Trap</option>
+                            <option value="ambient">Ambient</option>
+                            <option value="other">Другой</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Дата релиза *</label>
+                        <input type="date" id="releaseDate">
+                    </div>
+
+                    <button class="btn btn-primary" onclick="nextStep(2)">Далее →</button>
+                </div>
+
+                <div id="step2" class="form-step" style="display:none;">
+                    <div class="form-group">
+                        <label>Количество треков *</label>
+                        <input type="number" id="trackCount" min="1" value="1" onchange="generateTrackFields()">
+                    </div>
+
+                    <div id="trackFields"></div>
+
+                    <button class="btn btn-primary" onclick="nextStep(3)">Далее →</button>
+                </div>
+
+                <div id="step3" class="form-step" style="display:none;">
+                    <div class="form-group">
+                        <label>Обложка релиза *</label>
+                        <div class="file-upload" onclick="document.getElementById('coverFile').click()">
+                            <p>📁 Нажмите для загрузки</p>
+                            <p style="font-size: 12px; color: #999; margin-top: 5px;">
+                                JPG или PNG, минимум 3000x3000px
+                            </p>
+                            <input type="file" id="coverFile" accept="image/*" onchange="handleCoverUpload(event)">
+                        </div>
+                        <div id="coverPreview" style="margin-top: 10px;"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Аудио файлы *</label>
+                        <div class="file-upload" onclick="document.getElementById('audioFiles').click()">
+                            <p>🎵 Загрузить треки</p>
+                            <p style="font-size: 12px; color: #999; margin-top: 5px;">
+                                WAV или FLAC, 16-bit минимум
+                            </p>
+                            <input type="file" id="audioFiles" accept="audio/*" multiple onchange="handleAudioUpload(event)">
+                        </div>
+                        <div id="audioList" style="margin-top: 10px;"></div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="nextStep(4)">Далее →</button>
+                </div>
+
+                <div id="step4" class="form-step" style="display:none;">
+                    <h4 style="margin-bottom: 15px;">Проверьте данные</h4>
+                    <div id="summaryContent"></div>
+
+                    <div class="form-group">
+                        <label>Дополнительные комментарии</label>
+                        <textarea id="comments" placeholder="Любая дополнительная информация для лейбла"></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="submitRelease()">✓ Отправить релиз</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Мои релизы</h3>
+                <div id="releasesList">
+                    <div class="release-item">
+                        <h4>Dark Nights EP</h4>
+                        <p>Артист: SHADOWCAST</p>
+                        <p>Дата подачи: 15.02.2026</p>
+                        <span class="status status-pending">На рассмотрении</span>
+                    </div>
+
+                    <div class="release-item">
+                        <h4>Void Symphony</h4>
+                        <p>Артист: SHADOWCAST</p>
+                        <p>Дата подачи: 01.02.2026</p>
+                        <span class="status status-approved">Одобрено</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Раздел: О лейбле -->
+        <div id="label" class="section">
+            <div class="card">
+                <h3>О нашем лейбле</h3>
+                <p style="line-height: 1.6; margin-bottom: 15px;">
+                    Мы специализируемся на dark electronic music: witch house, darkwave, 
+                    industrial и смежных жанрах. Наша миссия - поддержка независимых 
+                    артистов и продвижение качественной музыки.
+                </p>
+
+                <div class="info-row">
+                    <span class="info-label">Основан</span>
+                    <span class="info-value">2024</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Артистов</span>
+                    <span class="info-value">24</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Релизов</span>
+                    <span class="info-value">87</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Платформы</span>
+                    <span class="info-value">Spotify, Apple Music, Bandcamp</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Условия сотрудничества</h3>
+                <ul style="line-height: 1.8; padding-left: 20px;">
+                    <li>Роялти: 70% артисту, 30% лейблу</li>
+                    <li>Выплаты ежеквартально</li>
+                    <li>Бесплатный мастеринг</li>
+                    <li>Продвижение в социальных сетях</li>
+                    <li>Распространение на все платформы</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h3>Контакты</h3>
+                <p style="margin-bottom: 8px;">📧 Email: label@example.com</p>
+                <p style="margin-bottom: 8px;">📱 Telegram: @labelmanager</p>
+                <p>🌐 Website: www.label.com</p>
+            </div>
+        </div>
+
+        <!-- Раздел: Инструменты -->
+        <div id="tools" class="section">
+            <div class="tool-card" onclick="openTool('tempo')">
+                <h4>🎹 BPM Calculator</h4>
+                <p>Определение темпа трека</p>
+            </div>
+
+            <div class="tool-card" onclick="openTool('metadata')">
+                <h4>📝 Metadata Generator</h4>
+                <p>Генератор метаданных для треков</p>
+            </div>
+
+            <div class="tool-card" onclick="openTool('isrc')">
+                <h4>🔢 ISRC Generator</h4>
+                <p>Генерация ISRC кодов</p>
+            </div>
+
+            <div class="tool-card" onclick="openTool('artwork')">
+                <h4>🖼 Artwork Checker</h4>
+                <p>Проверка обложки на соответствие стандартам</p>
+            </div>
+
+            <div class="tool-card" onclick="openTool('mastering')">
+                <h4>🎚 Mastering Guide</h4>
+                <p>Рекомендации по мастерингу</p>
+            </div>
+
+            <div class="tool-card" onclick="openTool('promo')">
+                <h4>📢 Promo Kit Generator</h4>
+                <p>Создание промо-материалов</p>
+            </div>
+        </div>
+
+        <!-- Раздел: Отчеты -->
+        <div id="reports" class="section">
+            <div class="card">
+                <h3>Статистика за последние 30 дней</h3>
+
+                <div class="info-row">
+                    <span class="info-label">Всего прослушиваний</span>
+                    <span class="info-value">12,847</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Заработано</span>
+                    <span class="info-value">$127.45</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Новые слушатели</span>
+                    <span class="info-value">342</span>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 65%;"></div>
+                </div>
+                <p style="font-size: 12px; color: #999; margin-top: 5px;">
+                    +15% к предыдущему месяцу
+                </p>
+            </div>
+
+            <div class="card">
+                <h3>Топ треки</h3>
+
+                <div class="release-item">
+                    <h4>1. Void Symphony</h4>
+                    <p>5,234 прослушиваний • $52.34</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 85%;"></div>
+                    </div>
+                </div>
+
+                <div class="release-item">
+                    <h4>2. Midnight Ritual</h4>
+                    <p>3,891 прослушиваний • $38.91</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 63%;"></div>
+                    </div>
+                </div>
+
+                <div class="release-item">
+                    <h4>3. Dark Echo</h4>
+                    <p>2,456 прослушиваний • $24.56</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 40%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>География слушателей</h3>
+                <div class="info-row">
+                    <span class="info-label">🇷🇺 Россия</span>
+                    <span class="info-value">42%</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">🇺🇸 США</span>
+                    <span class="info-value">23%</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">🇩🇪 Германия</span>
+                    <span class="info-value">15%</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">🇬🇧 Великобритания</span>
+                    <span class="info-value">10%</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">🌍 Другие</span>
+                    <span class="info-value">10%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Раздел: Выплаты -->
+        <div id="payments" class="section">
+            <div class="card">
+                <h3>Баланс</h3>
+                <div style="text-align: center; padding: 20px 0;">
+                    <div class="payment-amount">$127.45</div>
+                    <p style="color: #666; margin-top: 5px;">Доступно к выводу</p>
+                    <button class="btn btn-primary" style="margin-top: 15px; max-width: 200px; margin-left: auto; margin-right: auto;" onclick="requestPayout()">
+                        Запросить выплату
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>История выплат</h3>
+
+                <div class="payment-item">
+                    <div>
+                        <h4 style="margin-bottom: 3px;">Январь 2026</h4>
+                        <p style="font-size: 12px; color: #999;">15.01.2026</p>
+                    </div>
+                    <div class="payment-amount" style="font-size: 18px;">$98.20</div>
+                </div>
+
+                <div class="payment-item">
+                    <div>
+                        <h4 style="margin-bottom: 3px;">Октябрь 2025</h4>
+                        <p style="font-size: 12px; color: #999;">15.10.2025</p>
+                    </div>
+                    <div class="payment-amount" style="font-size: 18px;">$76.50</div>
+                </div>
+
+                <div class="payment-item">
+                    <div>
+                        <h4 style="margin-bottom: 3px;">Июль 2025</h4>
+                        <p style="font-size: 12px; color: #999;">15.07.2025</p>
+                    </div>
+                    <div class="payment-amount" style="font-size: 18px;">$64.30</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Детализация доходов</h3>
+                <div class="info-row">
+                    <span class="info-label">Spotify</span>
+                    <span class="info-value">$67.20</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Apple Music</span>
+                    <span class="info-value">$34.15</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">YouTube Music</span>
+                    <span class="info-value">$18.50</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Bandcamp</span>
+                    <span class="info-value">$7.60</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Инициализация Telegram WebApp
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.MainButton.setText('Готово');
+
+        // Применение темы Telegram
+        document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+        document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+
+        let currentStep = 1;
+        let releaseData = {};
+
+        // Навигация по разделам
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Переход между шагами формы
+        function nextStep(step) {
+            // Валидация текущего шага
+            if (currentStep === 1) {
+                const artistName = document.getElementById('artistName').value;
+                const releaseName = document.getElementById('releaseName').value;
+                const releaseType = document.getElementById('releaseType').value;
+                const genre = document.getElementById('genre').value;
+                const releaseDate = document.getElementById('releaseDate').value;
+
+                if (!artistName || !releaseName || !releaseType || !genre || !releaseDate) {
+                    tg.showAlert('Пожалуйста, заполните все обязательные поля');
+                    return;
+                }
+
+                releaseData.artistName = artistName;
+                releaseData.releaseName = releaseName;
+                releaseData.releaseType = releaseType;
+                releaseData.genre = genre;
+                releaseData.releaseDate = releaseDate;
+            }
+
+            // Скрываем текущий шаг
+            document.getElementById('step' + currentStep).style.display = 'none';
+            document.querySelectorAll('.step')[currentStep - 1].classList.remove('active');
+            document.querySelectorAll('.step')[currentStep - 1].classList.add('completed');
+
+            // Показываем следующий шаг
+            currentStep = step;
+            document.getElementById('step' + step).style.display = 'block';
+            document.querySelectorAll('.step')[step - 1].classList.add('active');
+
+            if (step === 2) {
+                generateTrackFields();
+            } else if (step === 4) {
+                generateSummary();
+            }
+        }
+
+        // Генерация полей для треков
+        function generateTrackFields() {
+            const count = parseInt(document.getElementById('trackCount').value);
+            const container = document.getElementById('trackFields');
+            container.innerHTML = '';
+
+            for (let i = 1; i <= count; i++) {
+                container.innerHTML += `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                        <h4 style="margin-bottom: 10px; color: #667eea;">Трек ${i}</h4>
+                        <div class="form-group">
+                            <label>Название трека</label>
+                            <input type="text" id="track${i}Name" placeholder="Название">
+                        </div>
+                        <div class="form-group">
+                            <label>Длительность (мм:сс)</label>
+                            <input type="text" id="track${i}Duration" placeholder="03:45">
+                        </div>
+                        <div class="form-group">
+                            <label>Особенности</label>
+                            <input type="text" id="track${i}Features" placeholder="feat. Artist (опционально)">
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Обработка загрузки обложки
+        function handleCoverUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('coverPreview').innerHTML = 
+                        `<img src="${e.target.result}" style="width: 100%; max-width: 300px; border-radius: 8px;">`;
+                };
+                reader.readAsDataURL(file);
+                releaseData.cover = file.name;
+            }
+        }
+
+        // Обработка загрузки аудио
+        function handleAudioUpload(event) {
+            const files = event.target.files;
+            let html = '<div style="background: #f8f9fa; padding: 10px; border-radius: 8px;">';
+            for (let file of files) {
+                html += `<p style="margin: 5px 0;">🎵 ${file.name}</p>`;
+            }
+            html += '</div>';
+            document.getElementById('audioList').innerHTML = html;
+            releaseData.audioFiles = Array.from(files).map(f => f.name);
+        }
+
+        // Генерация итоговой информации
+        function generateSummary() {
+            const tracks = parseInt(document.getElementById('trackCount').value);
+            let tracksHtml = '';
+
+            for (let i = 1; i <= tracks; i++) {
+                const name = document.getElementById(`track${i}Name`)?.value || `Трек ${i}`;
+                tracksHtml += `<p style="margin: 5px 0; padding-left: 15px;">• ${name}</p>`;
+            }
+
+            document.getElementById('summaryContent').innerHTML = `
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div class="info-row">
+                        <span class="info-label">Артист</span>
+                        <span class="info-value">${releaseData.artistName}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Релиз</span>
+                        <span class="info-value">${releaseData.releaseName}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Тип</span>
+                        <span class="info-value">${releaseData.releaseType}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Жанр</span>
+                        <span class="info-value">${releaseData.genre}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Дата релиза</span>
+                        <span class="info-value">${releaseData.releaseDate}</span>
+                    </div>
+                </div>
+                <h4 style="margin: 15px 0 10px;">Треки:</h4>
+                ${tracksHtml}
+            `;
+        }
+
+        // Отправка релиза
+        function submitRelease() {
+            releaseData.comments = document.getElementById('comments').value;
+
+            // Отправка данных боту
+            tg.sendData(JSON.stringify({
+                action: 'submit_release',
+                data: releaseData
+            }));
+
+            tg.showAlert('Релиз успешно отправлен! Мы свяжемся с вами в течение 2-3 рабочих дней.');
+
+            // Сброс формы
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        }
+
+        // Открытие инструмента
+        function openTool(toolName) {
+            tg.showAlert(`Инструмент "${toolName}" будет доступен в ближайшее время!`);
+        }
+
+        // Запрос выплаты
+        function requestPayout() {
+            tg.showConfirm('Запросить выплату $127.45?', (confirmed) => {
+                if (confirmed) {
+                    tg.sendData(JSON.stringify({
+                        action: 'request_payout',
+                        amount: 127.45
+                    }));
+                    tg.showAlert('Запрос на выплату отправлен!');
+                }
+            });
+        }
+
+        // Обработка закрытия приложения
+        tg.onEvent('mainButtonClicked', function() {
+            tg.close();
+        });
+    </script>
+</body>
+</html>
