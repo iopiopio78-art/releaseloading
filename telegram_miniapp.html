@@ -1,1 +1,870 @@
-__HTML_CODE__
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label Manager</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #7c3aed;
+            --primary-hover: #6d28d9;
+            --secondary: #a78bfa;
+            --bg-dark: #1a0033;
+            --bg-darker: #0f001f;
+            --bg-card: rgba(124, 58, 237, 0.1);
+            --border: rgba(167, 139, 250, 0.2);
+            --text: #ffffff;
+            --text-secondary: #c4b5fd;
+            --error: #ef4444;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #2d1055 50%, var(--bg-darker) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 80px;
+            overflow-x: hidden;
+        }
+
+        /* ПК-адаптация */
+        @media (min-width: 768px) {
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
+                padding: 20px;
+            }
+            .app-container {
+                max-width: 600px;
+                width: 100%;
+                margin: 0 auto;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+                border-radius: 20px;
+                overflow: hidden;
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #581c87 100%);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(124, 58, 237, 0.15);
+            padding: 10px 5px;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 10px 8px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+            border-radius: 8px;
+        }
+
+        .nav-btn.active {
+            background: var(--primary);
+            color: var(--text);
+            font-weight: 600;
+            transform: scale(1.05);
+        }
+
+        .content {
+            padding: 15px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(124, 58, 237, 0.15);
+        }
+
+        .card h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: var(--secondary);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: var(--text);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(167, 139, 250, 0.2);
+            color: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(167, 139, 250, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--error);
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .info-box {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-box h3 {
+            color: var(--success);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            padding: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .info-box li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .release-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .release-info h4 {
+            margin-bottom: 5px;
+            color: var(--secondary);
+        }
+
+        .release-info p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #2d1055 100%);
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            padding: 25px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 22px;
+            color: var(--secondary);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 28px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(124, 58, 237, 0.2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 28px;
+            color: var(--secondary);
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .checkbox-group {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.3s;
+        }
+
+        .checkbox-group label:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary);
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .file-upload.has-file {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #notification {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(124, 58, 237, 0.4);
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #notification.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>🎵 Label Manager</h1>
+            <p>Управление релизами и выплатами</p>
+        </div>
+
+        <div class="nav">
+            <button class="nav-btn active" onclick="showTab('releases')">📤 Релизы</button>
+            <button class="nav-btn" onclick="showTab('my-releases')">🎵 Мои релизы</button>
+            <button class="nav-btn" onclick="showTab('reports')">📊 Отчеты</button>
+            <button class="nav-btn" onclick="showTab('payouts')">💰 Выплаты</button>
+            <button class="nav-btn" onclick="showTab('about')">ℹ️ О нас</button>
+        </div>
+
+        <div class="content">
+            <!-- Релизы -->
+            <div id="releases" class="tab-content active">
+                <div class="card">
+                    <h2>📤 Подать новый релиз</h2>
+                    <form id="releaseForm">
+                        <div class="form-group">
+                            <label>Ник артиста *</label>
+                            <input type="text" id="artistNick" required placeholder="Введите ник артиста">
+                        </div>
+                        <div class="form-group">
+                            <label>Имя артиста (необязательно)</label>
+                            <input type="text" id="artistName" placeholder="Настоящее имя">
+                        </div>
+                        <div class="form-group">
+                            <label>Название релиза *</label>
+                            <input type="text" id="releaseName" required placeholder="Название трека/альбома">
+                        </div>
+                        <div class="form-group">
+                            <label>Тип релиза *</label>
+                            <select id="releaseType" required>
+                                <option value="">Выберите тип</option>
+                                <option value="single">Сингл</option>
+                                <option value="ep">EP</option>
+                                <option value="album">Альбом</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Жанр *</label>
+                            <select id="genre" required>
+                                <option value="">Выберите жанр</option>
+                                <option value="hip-hop">Hip-Hop/Rap</option>
+                                <option value="electronic">Electronic</option>
+                                <option value="rock">Rock</option>
+                                <option value="pop">Pop</option>
+                                <option value="r&b">R&B</option>
+                                <option value="indie">Indie</option>
+                                <option value="other">Другой</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Дата релиза *</label>
+                            <input type="date" id="releaseDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Количество треков *</label>
+                            <input type="number" id="trackCount" min="1" value="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Обложка релиза (JPEG/PNG) *</label>
+                            <div class="file-upload" id="coverUpload" onclick="document.getElementById('coverInput').click()">
+                                <span id="coverText">📁 Нажмите для выбора обложки</span>
+                            </div>
+                            <input type="file" id="coverInput" accept="image/*" class="hidden" onchange="handleCoverUpload(this)">
+                        </div>
+                        <div class="form-group">
+                            <label>Аудиофайлы (WAV/MP3) *</label>
+                            <div class="file-upload" id="audioUpload" onclick="document.getElementById('audioInput').click()">
+                                <span id="audioText">📁 Нажмите для выбора аудио</span>
+                            </div>
+                            <input type="file" id="audioInput" accept="audio/*" multiple class="hidden" onchange="handleAudioUpload(this)">
+                        </div>
+                        <div class="form-group">
+                            <label>Комментарии</label>
+                            <textarea id="comments" rows="3" placeholder="Дополнительная информация"></textarea>
+                        </div>
+                        <button type="submit" class="btn">🚀 Отправить релиз</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Мои релизы -->
+            <div id="my-releases" class="tab-content">
+                <div class="card">
+                    <h2>🎵 Мои релизы</h2>
+                    <div id="releasesList">
+                        <p style="text-align: center; color: var(--text-secondary); padding: 40px 0;">
+                            У вас пока нет релизов. Отправьте свой первый релиз! 🎵
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Отчеты -->
+            <div id="reports" class="tab-content">
+                <div class="card">
+                    <h2>📊 Отчеты</h2>
+                    
+                    <div class="info-box">
+                        <h3>ℹ️ О получении отчетов</h3>
+                        <p style="margin-bottom: 10px;">Сервисы предоставляют нам статистику до выплаты роялти, эти данные являются предварительными и не всегда полностью отражают число полученных прослушиваний.</p>
+                        <p style="margin-bottom: 10px;"><strong>Ежедневно обновляется статистика:</strong></p>
+                        <p style="margin-bottom: 15px;">ВКонтакте, Одноклассники (ОМА), Spotify, SoundCloud, Apple Music, Yandex.Music</p>
+                        <h4 style="color: var(--success); margin-bottom: 8px;">График полных отчётов:</h4>
+                        <ul>
+                            <li>I квартал (1 янв - 31 мар) → отчеты с 3 апреля</li>
+                            <li>II квартал (1 апр - 30 июн) → отчеты с 3 июля</li>
+                            <li>III квартал (1 июл - 30 сен) → отчеты с 3 октября</li>
+                            <li>IV квартал (1 окт - 31 дек) → отчеты с 3 января</li>
+                        </ul>
+                    </div>
+
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3 id="totalReleasesCount">-</h3>
+                            <p>Всего релизов в боте</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="myReleasesCount">-</h3>
+                            <p>Ваших релизов</p>
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="requestCounts()">🔄 Обновить данные</button>
+                </div>
+            </div>
+
+            <!-- Выплаты -->
+            <div id="payouts" class="tab-content">
+                <div class="card">
+                    <h2>💰 Выплаты</h2>
+                    
+                    <div class="info-box">
+                        <h3>ℹ️ О выплатах</h3>
+                        <p style="margin-bottom: 10px;">Большинство сервисов предоставляют отчеты раз в квартал, в связи с чем с марта 2023 года мы также перешли на ежеквартальную отчетность и выплаты.</p>
+                        <p style="margin-bottom: 15px;">Выплаты и отчеты поступают 4 раза в год в следующие месяцы: февраль (за осень), май (за зиму), август (за весну), ноябрь (за лето).</p>
+                        <h4 style="color: var(--success); margin-bottom: 8px;">График выплат:</h4>
+                        <ul>
+                            <li>I квартал (1 янв - 31 мар) → выплаты с 15 мая</li>
+                            <li>II квартал (1 апр - 30 июн) → выплаты с 15 августа</li>
+                            <li>III квартал (1 июл - 30 сен) → выплаты с 15 ноября</li>
+                            <li>IV квартал (1 окт - 31 дек) → выплаты с 15 февраля</li>
+                        </ul>
+                    </div>
+
+                    <button class="btn" onclick="openPayoutModal()">💸 Запросить выплату</button>
+                </div>
+            </div>
+
+            <!-- О нас -->
+            <div id="about" class="tab-content">
+                <div class="card">
+                    <h2>ℹ️ О лейбле</h2>
+                    <p style="line-height: 1.6; margin-bottom: 15px;">
+                        <strong>Label Manager</strong> — независимый музыкальный лейбл, специализирующийся на электронной музыке, хип-хопе и экспериментальных жанрах.
+                    </p>
+                    <p style="line-height: 1.6; margin-bottom: 15px;">
+                        Мы помогаем артистам распространять их музыку на всех крупнейших площадках: Spotify, Apple Music, Яндекс.Музыка, VK, и многих других.
+                    </p>
+                    <div style="background: rgba(124, 58, 237, 0.2); border-radius: 12px; padding: 15px; margin-top: 20px;">
+                        <h3 style="color: var(--secondary); margin-bottom: 10px;">📧 Контакты</h3>
+                        <p>Email: label@example.com</p>
+                        <p>Telegram: @labelmanager</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка удаления -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🗑 Удаление релиза</h2>
+                <button class="close-btn" onclick="closeDeleteModal()">×</button>
+            </div>
+            <form id="deleteForm">
+                <div class="form-group">
+                    <label>Ник артиста</label>
+                    <input type="text" id="deleteArtistNick" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Название релиза</label>
+                    <input type="text" id="deleteReleaseName" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Причина удаления *</label>
+                    <textarea id="deleteReason" rows="4" required placeholder="Укажите причину удаления"></textarea>
+                </div>
+                <input type="hidden" id="deleteReleaseId">
+                <button type="submit" class="btn btn-danger">🗑 Удалить релиз</button>
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()" style="margin-top: 10px;">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модалка выплаты -->
+    <div id="payoutModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>💸 Запрос выплаты</h2>
+                <button class="close-btn" onclick="closePayoutModal()">×</button>
+            </div>
+            <form id="payoutForm">
+                <div class="form-group">
+                    <label>Выберите релизы для выплаты:</label>
+                    <div id="payoutReleasesList"></div>
+                </div>
+                <div class="form-group">
+                    <label>Комментарий</label>
+                    <textarea id="payoutComment" rows="3" placeholder="Дополнительные пожелания"></textarea>
+                </div>
+                <button type="submit" class="btn">💸 Отправить запрос</button>
+                <button type="button" class="btn btn-secondary" onclick="closePayoutModal()" style="margin-top: 10px;">Отмена</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="notification"></div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        let coverBase64 = null;
+        let audioBase64List = [];
+        let myReleases = [];
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showNotification(message) {
+            const notif = document.getElementById('notification');
+            notif.textContent = message;
+            notif.classList.add('show');
+            setTimeout(() => notif.classList.remove('show'), 3000);
+        }
+
+        function handleCoverUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    coverBase64 = e.target.result;
+                    document.getElementById('coverUpload').classList.add('has-file');
+                    document.getElementById('coverText').textContent = `✅ ${file.name}`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleAudioUpload(input) {
+            if (input.files && input.files.length > 0) {
+                audioBase64List = [];
+                let processed = 0;
+                for (let file of input.files) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        audioBase64List.push(e.target.result);
+                        processed++;
+                        if (processed === input.files.length) {
+                            document.getElementById('audioUpload').classList.add('has-file');
+                            document.getElementById('audioText').textContent = `✅ Загружено файлов: ${input.files.length}`;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        document.getElementById('releaseForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!coverBase64) {
+                showNotification('❌ Загрузите обложку');
+                return;
+            }
+            if (audioBase64List.length === 0) {
+                showNotification('❌ Загрузите аудиофайлы');
+                return;
+            }
+
+            const releaseId = Date.now().toString();
+            const releaseData = {
+                id: releaseId,
+                artistNick: document.getElementById('artistNick').value,
+                artistName: document.getElementById('artistName').value || '',
+                releaseName: document.getElementById('releaseName').value,
+                releaseType: document.getElementById('releaseType').value,
+                genre: document.getElementById('genre').value,
+                releaseDate: document.getElementById('releaseDate').value,
+                trackCount: document.getElementById('trackCount').value,
+                cover: coverBase64,
+                audioFiles: audioBase64List,
+                comments: document.getElementById('comments').value || ''
+            };
+
+            myReleases.push(releaseData);
+            updateMyReleasesList();
+
+            tg.sendData(JSON.stringify({
+                action: 'submit_release',
+                data: releaseData
+            }));
+
+            showNotification('✅ Релиз отправлен!');
+            document.getElementById('releaseForm').reset();
+            coverBase64 = null;
+            audioBase64List = [];
+            document.getElementById('coverUpload').classList.remove('has-file');
+            document.getElementById('audioUpload').classList.remove('has-file');
+            document.getElementById('coverText').textContent = '📁 Нажмите для выбора обложки';
+            document.getElementById('audioText').textContent = '📁 Нажмите для выбора аудио';
+        });
+
+        function updateMyReleasesList() {
+            const list = document.getElementById('releasesList');
+            if (myReleases.length === 0) {
+                list.innerHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 40px 0;">
+                    У вас пока нет релизов. Отправьте свой первый релиз! 🎵
+                </p>`;
+                return;
+            }
+
+            list.innerHTML = myReleases.map(r => `
+                <div class="release-item">
+                    <div class="release-info">
+                        <h4>${r.releaseName}</h4>
+                        <p>Ник: ${r.artistNick} • Тип: ${r.releaseType}</p>
+                    </div>
+                    <button class="btn btn-danger" style="width: auto; padding: 8px 16px; font-size: 14px;" onclick="openDeleteModal('${r.id}', '${r.artistNick}', '${r.releaseName}')">🗑 Удалить</button>
+                </div>
+            `).join('');
+        }
+
+        function openDeleteModal(releaseId, artistNick, releaseName) {
+            document.getElementById('deleteReleaseId').value = releaseId;
+            document.getElementById('deleteArtistNick').value = artistNick;
+            document.getElementById('deleteReleaseName').value = releaseName;
+            document.getElementById('deleteReason').value = '';
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        document.getElementById('deleteForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const releaseId = document.getElementById('deleteReleaseId').value;
+            const artistNick = document.getElementById('deleteArtistNick').value;
+            const releaseName = document.getElementById('deleteReleaseName').value;
+            const reason = document.getElementById('deleteReason').value;
+
+            tg.sendData(JSON.stringify({
+                action: 'delete_release',
+                data: {
+                    release_id: releaseId,
+                    artist_nick: artistNick,
+                    release_name: releaseName,
+                    reason: reason
+                }
+            }));
+
+            showNotification('✅ Запрос на удаление отправлен');
+            closeDeleteModal();
+        });
+
+        function requestCounts() {
+            tg.sendData(JSON.stringify({ action: 'get_counts' }));
+            showNotification('🔄 Запрос отправлен...');
+        }
+
+        function openPayoutModal() {
+            if (myReleases.length === 0) {
+                showNotification('❌ У вас нет релизов для выплаты');
+                return;
+            }
+
+            const list = document.getElementById('payoutReleasesList');
+            list.innerHTML = myReleases.map(r => `
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" name="payoutRelease" value="${r.id}" data-nick="${r.artistNick}" data-name="${r.releaseName}">
+                        <span><strong>${r.releaseName}</strong> (${r.artistNick})</span>
+                    </label>
+                </div>
+            `).join('');
+
+            document.getElementById('payoutModal').classList.add('active');
+        }
+
+        function closePayoutModal() {
+            document.getElementById('payoutModal').classList.remove('active');
+        }
+
+        document.getElementById('payoutForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const selected = Array.from(document.querySelectorAll('input[name="payoutRelease"]:checked'));
+            
+            if (selected.length === 0) {
+                showNotification('❌ Выберите хотя бы один релиз');
+                return;
+            }
+
+            const releases = selected.map(cb => ({
+                release_id: cb.value,
+                artist_nick: cb.dataset.nick,
+                release_name: cb.dataset.name
+            }));
+
+            const comment = document.getElementById('payoutComment').value;
+
+            tg.sendData(JSON.stringify({
+                action: 'request_payout',
+                data: {
+                    releases: releases,
+                    comment: comment
+                }
+            }));
+
+            showNotification('✅ Запрос на выплату отправлен');
+            closePayoutModal();
+        });
+    </script>
+</body>
+</html>
