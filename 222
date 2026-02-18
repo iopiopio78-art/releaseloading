@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: #0b0218;
+      color: #f5f3ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      padding: 20px;
+      border-radius: 16px;
+      background: #190735;
+      border: 1px solid #6d28d9;
+      box-shadow: 0 18px 50px rgba(0,0,0,.6);
+      max-width: 320px;
+      text-align: center;
+    }
+    button {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid #a78bfa;
+      background: #4c1d95;
+      color: #fff;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 style="margin:0 0 8px;">KILLA! RECORDS</h2>
+    <p id="info" style="margin:0 0 8px;font-size:14px;">
+      Проверка Telegram Mini App
+    </p>
+    <button id="btnSend">Отправить test в бота</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+
+    const info = document.getElementById("info");
+    const btn = document.getElementById("btnSend");
+
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      info.textContent = "WebApp OK. userId: " + (tg.initDataUnsafe?.user?.id || "нет");
+    } else {
+      info.textContent = "Открыто не из Telegram (браузер)";
+    }
+
+    btn.onclick = () => {
+      if (!tg) {
+        alert("Нет Telegram.WebApp, открой через бота");
+        return;
+      }
+      tg.sendData(JSON.stringify({action: "test"}));
+    };
+  </script>
+</body>
+</html>
