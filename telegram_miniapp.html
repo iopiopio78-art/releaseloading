@@ -1,599 +1,71 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Label Mini App</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    :root{
-      --bg0:#070010; --bg1:#12002a; --card:#140625cc;
-      --stroke:#4c1d95aa; --accent:#a78bfa; --accent2:#7c3aed;
-      --text:#efeaff; --muted:#b8a7dd;
-      --danger:#fb7185; --ok:#34d399;
-      --shadow: 0 18px 50px rgba(0,0,0,.55);
-      --radius:18px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
+    body {
+      margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color:var(--text);
-      background:
-        radial-gradient(900px 500px at 20% 10%, rgba(124,58,237,.35), transparent 60%),
-        radial-gradient(700px 420px at 80% 20%, rgba(167,139,250,.25), transparent 55%),
-        radial-gradient(800px 520px at 50% 90%, rgba(76,29,149,.35), transparent 60%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
-      min-height:100vh;
+      background: #0b0218;
+      color: #f5f3ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
     }
-    .wrap{
-      width:100%;
-      max-width:980px;
-      margin:0 auto;
-      padding:16px;
+    .card {
+      padding: 20px;
+      border-radius: 16px;
+      background: #190735;
+      border: 1px solid #6d28d9;
+      box-shadow: 0 18px 50px rgba(0,0,0,.6);
+      max-width: 320px;
+      text-align: center;
     }
-    .shell{
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(20,6,37,.65), rgba(10,0,22,.55));
-      box-shadow: var(--shadow);
-      border-radius: var(--radius);
-      overflow:hidden;
-      backdrop-filter: blur(10px);
+    button {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid #a78bfa;
+      background: #4c1d95;
+      color: #fff;
+      cursor: pointer;
     }
-    header{
-      padding:16px 16px 10px;
-      border-bottom:1px solid rgba(167,139,250,.18);
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-    }
-    .brand h1{margin:0; font-size:16px; letter-spacing:.3px}
-    .brand p{margin:4px 0 0; color:var(--muted); font-size:12px}
-    .tabs{
-      display:flex; flex-wrap:wrap; gap:8px;
-      padding:12px 16px;
-      border-bottom:1px solid rgba(167,139,250,.18);
-      background: rgba(8,0,16,.35);
-    }
-    .tab{
-      padding:10px 12px;
-      border:1px solid rgba(167,139,250,.25);
-      color:var(--text);
-      border-radius:14px;
-      background: rgba(20,6,37,.45);
-      cursor:pointer;
-      user-select:none;
-      transition: transform .12s ease, border .12s ease;
-    }
-    .tab:hover{transform: translateY(-1px); border-color: rgba(167,139,250,.55)}
-    .tab.active{background: rgba(124,58,237,.25); border-color: rgba(167,139,250,.75)}
-    main{padding:16px}
-    .card{
-      border:1px solid rgba(167,139,250,.22);
-      background: rgba(20,6,37,.55);
-      border-radius: var(--radius);
-      padding:14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
-      position:relative;
-      overflow:hidden;
-    }
-    .card:before{
-      content:"";
-      position:absolute; inset:-2px -2px auto -2px; height:3px;
-      background: linear-gradient(90deg, transparent, rgba(167,139,250,.85), transparent);
-      opacity:.65;
-      animation: glow 3.2s linear infinite;
-    }
-    @keyframes glow{0%{transform:translateX(-30%)}100%{transform:translateX(30%)}}
-    .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-    @media (max-width:720px){ .row{grid-template-columns:1fr} .wrap{padding:12px} }
-    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
-    input, textarea, select{
-      width:100%;
-      padding:12px 12px;
-      border-radius:14px;
-      border:1px solid rgba(167,139,250,.25);
-      background: rgba(6,0,12,.55);
-      color: var(--text);
-      outline:none;
-    }
-    textarea{min-height:90px; resize:vertical}
-    .btn{
-      width:100%;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid rgba(167,139,250,.45);
-      background: linear-gradient(180deg, rgba(124,58,237,.35), rgba(76,29,149,.25));
-      color:var(--text);
-      cursor:pointer;
-      transition: transform .12s ease;
-    }
-    .btn:hover{transform: translateY(-1px)}
-    .btn.secondary{background: rgba(20,6,37,.55)}
-    .btn.danger{border-color: rgba(251,113,133,.55); background: rgba(251,113,133,.12)}
-    .hint{color:var(--muted); font-size:12px; margin-top:8px; line-height:1.45}
-    .toast{
-      position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
-      background: rgba(10,0,22,.9);
-      border:1px solid rgba(167,139,250,.35);
-      color:var(--text);
-      padding:10px 12px;
-      border-radius:14px;
-      box-shadow: var(--shadow);
-      max-width: min(520px, calc(100vw - 24px));
-      display:none;
-    }
-    .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
-    @media (max-width:720px){ .grid3{grid-template-columns:1fr 1fr} }
-    .tool{
-      padding:12px; border-radius:16px;
-      border:1px solid rgba(167,139,250,.2);
-      background: rgba(6,0,12,.35);
-      cursor:pointer;
-      transition: transform .12s ease;
-    }
-    .tool:hover{transform: translateY(-2px)}
-    .tool h3{margin:0 0 6px; font-size:13px}
-    .tool p{margin:0; font-size:12px; color:var(--muted)}
-    .releaseItem{
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
-      padding:12px; border-radius:16px;
-      border:1px solid rgba(167,139,250,.2);
-      background: rgba(6,0,12,.35);
-      margin-top:10px;
-    }
-    .releaseItem b{font-size:13px}
-    .releaseItem small{display:block; color:var(--muted); margin-top:3px}
-    .actions{display:flex; gap:8px}
-    .mini{padding:10px 12px; border-radius:14px; border:1px solid rgba(167,139,250,.25); background: rgba(20,6,37,.45); color:var(--text); cursor:pointer}
-    .mini.danger{border-color: rgba(251,113,133,.55); background: rgba(251,113,133,.12)}
-    .hidden{display:none}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="shell">
-      <header>
-        <div class="brand">
-          <h1>Label Manager Mini App</h1>
-          <p id="sub">Загрузка релизов • отчёты • выплаты</p>
-        </div>
-        <button class="mini" id="btnClose">Закрыть</button>
-      </header>
-
-      <div class="tabs" id="tabs"></div>
-
-      <main>
-        <!-- Upload -->
-        <section id="page_upload" class="card">
-          <div id="stepWrap"></div>
-          <div style="margin-top:12px" class="row">
-            <button class="btn secondary" id="prevBtn">Назад</button>
-            <button class="btn" id="nextBtn">Далее</button>
-          </div>
-          <p class="hint">Файлы: обложка и аудио/архив будут отправлены админу вместе с данными релиза.</p>
-        </section>
-
-        <!-- My releases -->
-        <section id="page_my" class="card hidden">
-          <div class="row">
-            <button class="btn" id="refreshMy">Обновить список</button>
-            <button class="btn secondary" id="toUpload">Загрузить новый</button>
-          </div>
-          <div id="myList" style="margin-top:10px"></div>
-          <p class="hint">Здесь показываются только реальные релизы, которые ты отправил(а). Демонстрационных нет.</p>
-        </section>
-
-        <!-- About -->
-        <section id="page_about" class="card hidden">
-          <h2 style="margin:0 0 8px;font-size:16px">О лейбле</h2>
-          <p style="margin:0;color:var(--muted);line-height:1.5">
-            Здесь может быть твой текст: кто вы, условия приёма демок, контакты A&R, график работы и т.д.
-          </p>
-        </section>
-
-        <!-- Tools -->
-        <section id="page_tools" class="card hidden">
-          <h2 style="margin:0 0 10px;font-size:16px">Инструменты</h2>
-          <div class="grid3">
-            <div class="tool" data-tool="Промо поддержка"><h3>Промо поддержка</h3><p>Скоро</p></div>
-            <div class="tool" data-tool="Прямые ссылки"><h3>Прямые ссылки</h3><p>Скоро</p></div>
-            <div class="tool" data-tool="Перенос релиза"><h3>Перенос релиза</h3><p>Скоро</p></div>
-            <div class="tool" data-tool="UPC/ISRC"><h3>UPC / ISRC</h3><p>Скоро</p></div>
-            <div class="tool" data-tool="Видеошот"><h3>Видеошот</h3><p>Скоро</p></div>
-            <div class="tool" data-tool="Видео обложка"><h3>Видео обложка</h3><p>Скоро</p></div>
-          </div>
-          <p class="hint">Нажми на инструмент — появится уведомление “скоро”, и действие уйдёт админу.</p>
-        </section>
-
-        <!-- Reports -->
-        <section id="page_reports" class="card hidden">
-          <h2 style="margin:0 0 10px;font-size:16px">Отчёты</h2>
-          <div class="card" style="margin-bottom:12px">
-            <pre style="white-space:pre-wrap;margin:0;color:var(--muted);font-family:inherit;line-height:1.5" id="reportsInfo"></pre>
-          </div>
-
-          <div class="row">
-            <div class="card">
-              <div style="color:var(--muted);font-size:12px">Всего релизов в боте</div>
-              <div style="font-size:28px;margin-top:6px" id="countTotal">—</div>
-            </div>
-            <div class="card">
-              <div style="color:var(--muted);font-size:12px">Моих релизов</div>
-              <div style="font-size:28px;margin-top:6px" id="countMine">—</div>
-            </div>
-          </div>
-
-          <div style="margin-top:12px" class="row">
-            <button class="btn" id="btnCounts">Обновить счётчики</button>
-            <button class="btn secondary" id="btnReportReq">Запросить отчёт</button>
-          </div>
-
-          <div id="reportForm" class="hidden" style="margin-top:12px">
-            <label>Ник артиста</label>
-            <input id="repNick" placeholder="например: iopiopio78" />
-            <label>Релиз (необязательно)</label>
-            <input id="repTitle" placeholder="Название релиза" />
-            <label>Период</label>
-            <select id="repPeriod">
-              <option value="I квартал">I квартал</option>
-              <option value="II квартал">II квартал</option>
-              <option value="III квартал">III квартал</option>
-              <option value="IV квартал">IV квартал</option>
-              <option value="Другое">Другое</option>
-            </select>
-            <label>Комментарий</label>
-            <textarea id="repComment" placeholder="Что именно нужно, какие сервисы, уточнения"></textarea>
-            <button class="btn" id="sendReport">Отправить запрос</button>
-          </div>
-        </section>
-
-        <!-- Payouts -->
-        <section id="page_payouts" class="card hidden">
-          <h2 style="margin:0 0 10px;font-size:16px">Выплаты</h2>
-          <div class="card" style="margin-bottom:12px">
-            <pre style="white-space:pre-wrap;margin:0;color:var(--muted);font-family:inherit;line-height:1.5" id="payoutsInfo"></pre>
-          </div>
-
-          <div class="row">
-            <button class="btn" id="btnLoadForPayout">Выбрать релизы для вывода</button>
-            <button class="btn secondary" id="btnPayoutSend">Отправить запрос</button>
-          </div>
-
-          <div id="payoutBox" class="hidden" style="margin-top:12px">
-            <div id="payoutList"></div>
-            <label>Кошелёк/реквизиты (необязательно)</label>
-            <input id="payWallet" placeholder="карта/USDT/реквизиты" />
-            <label>Комментарий</label>
-            <textarea id="payComment" placeholder="Доп. информация"></textarea>
-          </div>
-
-          <p class="hint">Релизы для выбора подтягиваются из “Мои релизы”.</p>
-        </section>
-      </main>
-    </div>
+  <div class="card">
+    <h2 style="margin:0 0 8px;">KILLA! RECORDS</h2>
+    <p id="info" style="margin:0 0 8px;font-size:14px;">
+      Проверка Telegram Mini App
+    </p>
+    <button id="btnSend">Отправить test в бота</button>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <script>
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 
-<script>
-  const tg = window.Telegram?.WebApp;
-  if (tg) tg.expand();
+    const info = document.getElementById("info");
+    const btn = document.getElementById("btnSend");
 
-  const REPORTS_INFO = `Сервисы предоставляют нам статистику до выплаты роялти, эти данные являются предварительными и не всегда полностью отражают число полученных прослушиваний.
-
-На данный момент в ежедневном режиме обновляется статистика с сервисов ВКонтакте, Одноклассники (ОМА), Spotify, SoundCloud, Apple Music, Yandex.Music
-
-График полных отчётов:
-
-I квартал - с 1 января по 31 марта - отчеты с 3 апреля
-
-II квартал - с 1 апреля по 30 июня - отчеты с 3 июля
-
-III квартал - с 1 июля по 30 сентября - отчеты с 3 октября
-
-IV квартал - с 1 октября по 31 декабря - отчеты с 3 января
-
-Что делаем?﻿👇﻿`;
-
-  const PAYOUTS_INFO = `Большинство сервисов предоставляют отчеты раз в квартал, в связи с чем с марта 2023 года мы также перешли на ежеквартальную отчетность и выплаты.
-
-Таким образом, выплаты и отчеты поступают 4 раза в год в следующие месяцы: февраль (за осень), май (за зиму), август (за весну), ноябрь (за лето).
-
-График выплат:
-
-I квартал - с 1 января по 31 марта - выплаты с 15 мая
-
-II квартал - с 1 апреля по 30 июня - выплаты с 15 августа
-
-III квартал - с 1 июля по 30 сентября - выплаты с 15 ноября
-
-IV квартал - с 1 октября по 31 декабря - выплаты с 15 февраля
-
-Что делаем?﻿👇﻿`;
-
-  const pages = [
-    {id:"upload",  title:"Загрузить релиз"},
-    {id:"my",      title:"Мои релизы"},
-    {id:"about",   title:"О лейбле"},
-    {id:"tools",   title:"Инструменты"},
-    {id:"reports", title:"Отчёты"},
-    {id:"payouts", title:"Выплаты"},
-  ];
-
-  const state = {
-    page:"upload",
-    step:0,
-    release:{
-      artistNick:"",
-      releaseTitle:"",
-      link:"",
-      comment:"",
-      coverB64:"",
-      audioB64:"",
-    },
-    myReleases: [],
-    payoutSelected: new Set()
-  };
-
-  const $ = (id)=>document.getElementById(id);
-  const toast = (t)=>{ const el=$("toast"); el.textContent=t; el.style.display="block"; clearTimeout(window.__tt); window.__tt=setTimeout(()=>el.style.display="none",2200); };
-  const send = (obj)=>{
-    try{
-      if(!tg) { console.log("send", obj); toast("Открой в Telegram"); return; }
-      tg.sendData(JSON.stringify(obj)); // sendData -> bot gets web_app_data [web:35]
-      toast("Отправлено");
-    }catch(e){ console.error(e); toast("Ошибка отправки"); }
-  };
-
-  // Tabs
-  const tabsEl = $("tabs");
-  pages.forEach(p=>{
-    const b=document.createElement("div");
-    b.className="tab";
-    b.textContent=p.title;
-    b.onclick=()=>go(p.id);
-    b.dataset.page=p.id;
-    tabsEl.appendChild(b);
-  });
-  function renderTabs(){
-    [...tabsEl.children].forEach(x=>x.classList.toggle("active", x.dataset.page===state.page));
-  }
-  function go(page){
-    state.page=page;
-    ["upload","my","about","tools","reports","payouts"].forEach(pid=>{
-      $("page_"+pid).classList.toggle("hidden", pid!==page);
-    });
-    if(page==="reports"){
-      $("reportsInfo").textContent = REPORTS_INFO;
-    }
-    if(page==="payouts"){
-      $("payoutsInfo").textContent = PAYOUTS_INFO;
-    }
-    renderTabs();
-  }
-  go("upload");
-
-  // Step form (upload)
-  const steps = [
-    {k:"artistNick",   title:"Шаг 1/5 — Ник артиста",    type:"input", ph:"например: iopiopio78", req:true},
-    {k:"releaseTitle", title:"Шаг 2/5 — Название релиза",type:"input", ph:"например: Night Drive EP", req:true},
-    {k:"link",         title:"Шаг 3/5 — Ссылка",         type:"input", ph:"Drive/SoundCloud/Dropbox (если есть)", req:false},
-    {k:"comment",      title:"Шаг 4/5 — Комментарий",    type:"textarea", ph:"жанр, BPM, референсы, условия", req:false},
-    {k:"files",        title:"Шаг 5/5 — Файлы",          type:"files", req:false},
-  ];
-
-  function renderStep(){
-    const s=steps[state.step];
-    const wrap=$("stepWrap");
-    wrap.innerHTML = `<h2 style="margin:0 0 10px;font-size:16px">${s.title}</h2>`;
-    const val = state.release[s.k] || "";
-
-    if(s.type==="input"){
-      wrap.innerHTML += `<label>${s.req?"Обязательно":"Необязательно"}</label>
-        <input id="stepInput" placeholder="${s.ph}" value="${escapeHtml(val)}">`;
-    }else if(s.type==="textarea"){
-      wrap.innerHTML += `<label>${s.req?"Обязательно":"Необязательно"}</label>
-        <textarea id="stepInput" placeholder="${s.ph}">${escapeHtml(val)}</textarea>`;
-    }else{
-      wrap.innerHTML += `
-        <div class="row">
-          <div>
-            <label>Обложка (jpg/png)</label>
-            <input type="file" id="coverFile" accept="image/*">
-          </div>
-          <div>
-            <label>Аудио/архив (mp3/wav/zip)</label>
-            <input type="file" id="audioFile" accept=".mp3,.wav,.zip,audio/*">
-          </div>
-        </div>
-        <p class="hint">Если файл большой — лучше zip. Отправка идёт как base64.</p>
-      `;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      info.textContent = "WebApp OK. userId: " + (tg.initDataUnsafe?.user?.id || "нет");
+    } else {
+      info.textContent = "Открыто не из Telegram (браузер)";
     }
 
-    $("prevBtn").textContent = (state.step===0) ? "В меню" : "Назад";
-    $("nextBtn").textContent = (state.step===steps.length-1) ? "Отправить" : "Далее";
-  }
-
-  function escapeHtml(s){ return (s||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
-
-  $("prevBtn").onclick=()=>{
-    if(state.step===0){ go("my"); return; }
-    state.step--; renderStep();
-  };
-
-  $("nextBtn").onclick=async ()=>{
-    const s=steps[state.step];
-
-    if(s.type==="input" || s.type==="textarea"){
-      const v = ($("stepInput").value || "").trim();
-      if(s.req && !v){ toast("Заполни поле"); return; }
-      state.release[s.k]=v;
-      state.step++;
-      renderStep();
-      return;
-    }
-
-    // files step
-    const cover = $("coverFile").files?.[0];
-    const audio = $("audioFile").files?.[0];
-
-    if(cover) state.release.coverB64 = await fileToDataUrl(cover);
-    if(audio) state.release.audioB64 = await fileToDataUrl(audio);
-
-    // Submit
-    if(!state.release.artistNick || !state.release.releaseTitle){
-      toast("Ник и Название обязательны");
-      return;
-    }
-
-    send({action:"submit_release", ...state.release});
-
-    // Reset form
-    state.step=0;
-    state.release = {artistNick:"",releaseTitle:"",link:"",comment:"",coverB64:"",audioB64:""};
-    renderStep();
-    go("my");
-  };
-
-  async function fileToDataUrl(file){
-    return new Promise((res, rej)=>{
-      const r = new FileReader();
-      r.onload = ()=>res(r.result);
-      r.onerror = rej;
-      r.readAsDataURL(file);
-    });
-  }
-
-  renderStep();
-
-  // My releases (stored locally only as cache; real list should be from your backend, here we keep it simple)
-  function renderMy(){
-    const box=$("myList");
-    box.innerHTML="";
-    if(state.myReleases.length===0){
-      box.innerHTML = `<div class="card"><div style="color:var(--muted)">Пока пусто. Нажми “Загрузить новый”.</div></div>`;
-      return;
-    }
-    state.myReleases.forEach(r=>{
-      const el=document.createElement("div");
-      el.className="releaseItem";
-      el.innerHTML = `
-        <div>
-          <b>${escapeHtml(r.releaseTitle)}</b>
-          <small>${escapeHtml(r.artistNick)} • ID ${r.id}</small>
-        </div>
-        <div class="actions">
-          <button class="mini danger">Удалить</button>
-        </div>
-      `;
-      el.querySelector("button").onclick=()=>openDelete(r);
-      box.appendChild(el);
-    });
-  }
-
-  // For this version, we keep "my releases" as local cache + refresh from server by asking bot.
-  $("refreshMy").onclick=()=>{
-    send({action:"list_releases"});
-    toast("Запрос списка отправлен. Обновление придёт после синка.");
-  };
-  $("toUpload").onclick=()=>{ state.step=0; renderStep(); go("upload"); };
-
-  // Delete form (inline prompt)
-  function openDelete(r){
-    const reason = prompt(`Причина удаления релиза:\n${r.artistNick} — ${r.releaseTitle}`);
-    if(!reason || !reason.trim()){ toast("Нужна причина"); return; }
-    send({
-      action:"request_delete",
-      releaseId:r.id,
-      artistNick:r.artistNick,
-      releaseTitle:r.releaseTitle,
-      reason: reason.trim()
-    });
-    // remove from UI immediately
-    state.myReleases = state.myReleases.filter(x=>x.id!==r.id);
-    renderMy();
-  }
-
-  // Tools
-  document.querySelectorAll(".tool").forEach(x=>{
-    x.onclick=()=>{
-      const name=x.dataset.tool;
-      toast("Скоро!");
-      send({action:"tool_click", tool:name});
+    btn.onclick = () => {
+      if (!tg) {
+        alert("Нет Telegram.WebApp, открой через бота");
+        return;
+      }
+      tg.sendData(JSON.stringify({action: "test"}));
     };
-  });
-
-  // Reports counts + request form
-  $("btnCounts").onclick=()=>{
-    send({action:"get_counts"});
-    // counts are answered by bot in chat; if ты хочешь прямо в миниапп — нужен отдельный API, тут делаем через чат.
-    toast("Счётчики придут в чат");
-  };
-  $("btnReportReq").onclick=()=> $("reportForm").classList.toggle("hidden");
-
-  $("sendReport").onclick=()=>{
-    const artistNick=($("repNick").value||"").trim();
-    const releaseTitle=($("repTitle").value||"").trim();
-    const period=$("repPeriod").value;
-    const comment=($("repComment").value||"").trim();
-    if(!artistNick){ toast("Нужен ник"); return; }
-    send({action:"request_report", artistNick, releaseTitle, period, comment});
-    $("repNick").value=""; $("repTitle").value=""; $("repComment").value="";
-    $("reportForm").classList.add("hidden");
-  };
-
-  // Payouts
-  $("btnLoadForPayout").onclick=()=>{
-    $("payoutBox").classList.remove("hidden");
-    renderPayoutList();
-  };
-
-  function renderPayoutList(){
-    const box=$("payoutList");
-    box.innerHTML="";
-    if(state.myReleases.length===0){
-      box.innerHTML=`<div class="card"><div style="color:var(--muted)">Нет релизов для выбора.</div></div>`;
-      return;
-    }
-    state.payoutSelected = new Set();
-    state.myReleases.forEach(r=>{
-      const id="chk_"+r.id;
-      const el=document.createElement("div");
-      el.className="releaseItem";
-      el.innerHTML=`
-        <div>
-          <b>${escapeHtml(r.releaseTitle)}</b>
-          <small>${escapeHtml(r.artistNick)} • ID ${r.id}</small>
-        </div>
-        <div class="actions">
-          <input type="checkbox" id="${id}" />
-        </div>
-      `;
-      el.querySelector("input").onchange=(e)=>{
-        if(e.target.checked) state.payoutSelected.add(r.id);
-        else state.payoutSelected.delete(r.id);
-      };
-      box.appendChild(el);
-    });
-  }
-
-  $("btnPayoutSend").onclick=()=>{
-    if($("payoutBox").classList.contains("hidden")) $("payoutBox").classList.remove("hidden");
-    const releases=[...state.payoutSelected];
-    const wallet=($("payWallet").value||"").trim();
-    const comment=($("payComment").value||"").trim();
-    if(releases.length===0){ toast("Выбери релизы"); return; }
-    send({action:"request_payout", releases, wallet, comment});
-    $("payWallet").value=""; $("payComment").value="";
-    state.payoutSelected=new Set();
-    toast("Запрос отправлен");
-  };
-
-  // Close
-  $("btnClose").onclick=()=>{ if(tg) tg.close(); };
-
-  // Minimal local cache: when user submits, add to my releases list as “new”
-  // In real world we sync from DB. Here we keep UI responsive.
-  window.addEventListener("message", (e)=>{});
-  // Note: bot cannot push data back into webapp without extra backend; so "my releases" stays local cache in this simple build.
-</script>
+  </script>
 </body>
 </html>
